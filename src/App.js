@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "./App.css";
 
 // Components
@@ -14,10 +19,10 @@ import AI from "./components/AI.mjs";
 import TimeTable from "./components/Timetable.mjs";
 import StudyTrends from "./components/StudyTrends.mjs";
 import PdfSummarizer from "./components/PdfReader.mjs";
-import Profile from "./components/Profile.mjs";
-import { StudyTracker } from './components/StudyTracker.mjs';
+// import Profile from "./components/Profile.mjs";
+import { StudyTracker } from "./components/StudyTracker.mjs";
 import AISuggestions from "./components/AISuggestions.mjs";
-import Mocktest from './components/Mocktest.mjs';
+import Mocktest from "./components/Mocktest.mjs";
 
 /* ─── Animated background particles ──────────────────────────────── */
 function ParticleField({ mode }) {
@@ -27,7 +32,10 @@ function ParticleField({ mode }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     let animId;
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
     resize();
     window.addEventListener("resize", resize);
 
@@ -43,8 +51,9 @@ function ParticleField({ mode }) {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const color = mode === "dark" ? "120,200,255" : "99,102,241";
-      particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
         if (p.x < 0) p.x = canvas.width;
         if (p.x > canvas.width) p.x = 0;
         if (p.y < 0) p.y = canvas.height;
@@ -73,10 +82,15 @@ function ParticleField({ mode }) {
       animId = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); };
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
   }, [mode]);
 
-  return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
+  return (
+    <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />
+  );
 }
 
 /* ─── Section wrapper with staggered reveal ──────────────────────── */
@@ -88,8 +102,13 @@ function Section({ children, delay = 0, className = "" }) {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { threshold: 0.08 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.08 },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -111,7 +130,10 @@ function WelcomeBanner({ user, mode }) {
   const [tick, setTick] = useState(0);
   const greetings = ["Welcome back", "Great to see you", "Ready to learn"];
   useEffect(() => {
-    const id = setInterval(() => setTick(t => (t + 1) % greetings.length), 3500);
+    const id = setInterval(
+      () => setTick((t) => (t + 1) % greetings.length),
+      3500,
+    );
     return () => clearInterval(id);
   }, []);
 
@@ -122,7 +144,9 @@ function WelcomeBanner({ user, mode }) {
         <div className="welcome-avatar">{user?.[0]?.toUpperCase() ?? "S"}</div>
         <div>
           <div className="welcome-greeting">
-            <span className="greeting-text" key={tick}>{greetings[tick]},</span>
+            <span className="greeting-text" key={tick}>
+              {greetings[tick]},
+            </span>
           </div>
           <h2 className="welcome-name">{user}! 🚀</h2>
         </div>
@@ -183,7 +207,7 @@ export default function App() {
   };
 
   const toggleMode = () => {
-    setMode(prev => {
+    setMode((prev) => {
       const next = prev === "light" ? "dark" : "light";
       localStorage.setItem("colorMode", next);
       return next;
@@ -201,7 +225,12 @@ export default function App() {
       <div className="orb orb-3" />
 
       <Router>
-        <Navbar mode={mode} toggleMode={toggleMode} user={user} logout={handleLogout} />
+        <Navbar
+          mode={mode}
+          toggleMode={toggleMode}
+          user={user}
+          logout={handleLogout}
+        />
 
         <main className="main-container">
           <Routes>
@@ -290,11 +319,11 @@ export default function App() {
                     </Section>
 
                     {/* PDF Summarizer */}
-                    <Section delay={80}>
+                    {/* <Section delay={80}>
                       <ComponentCard accent="var(--color-fuchsia)">
                         <PdfSummarizer mode={mode} />
                       </ComponentCard>
-                    </Section>
+                    </Section> */}
 
                     <SectionDivider label="Mock Test" icon="📝" />
 
@@ -305,14 +334,14 @@ export default function App() {
                       </ComponentCard>
                     </Section>
 
-                    <SectionDivider label="Profile" icon="👤" />
+                    {/* <SectionDivider label="Profile" icon="👤" /> */}
 
                     {/* Profile */}
-                    <Section delay={0}>
+                    {/* <Section delay={0}>
                       <ComponentCard accent="var(--color-violet)">
                         <Profile mode={mode} />
                       </ComponentCard>
-                    </Section>
+                    </Section> */}
 
                     {/* Footer spacer */}
                     <div className="feed-footer" />
@@ -324,9 +353,62 @@ export default function App() {
             />
 
             {/* Protected sub-routes */}
-            <Route path="/about" element={user ? <div className="page-wrapper"><ComponentCard accent="var(--color-amber)"><About mode={mode} /></ComponentCard></div> : <Navigate to="/login" />} />
-            <Route path="/ai" element={user ? <div className="page-wrapper"><ComponentCard accent="var(--color-violet)" glow><AI mode={mode} /></ComponentCard></div> : <Navigate to="/login" />} />
-            <Route path="/timetable" element={user ? <div className="page-wrapper"><ComponentCard accent="var(--color-cyan)"><TimeTable mode={mode} /></ComponentCard></div> : <Navigate to="/login" />} />
+            <Route
+              path="/about"
+              element={
+                user ? (
+                  <div className="page-wrapper">
+                    <ComponentCard accent="var(--color-amber)">
+                      <About mode={mode} />
+                    </ComponentCard>
+                  </div>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/ai"
+              element={
+                user ? (
+                  <div className="page-wrapper">
+                    <ComponentCard accent="var(--color-violet)" glow>
+                      <AI mode={mode} />
+                    </ComponentCard>
+                  </div>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/pdfsummariser"
+              element={
+                user ? (
+                  <div className="page-wrapper">
+                    <ComponentCard accent="var(--color-fuchsia)">
+                      <PdfSummarizer mode={mode} />
+                    </ComponentCard>
+                  </div>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/timetable"
+              element={
+                user ? (
+                  <div className="page-wrapper">
+                    <ComponentCard accent="var(--color-cyan)">
+                      <TimeTable mode={mode} />
+                    </ComponentCard>
+                  </div>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

@@ -27,6 +27,7 @@ export default function Navbar(props) {
                 <li className="nav-item"><Link className="nav-link" to="/about">About</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/ai">AI</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/timetable">TimeTable</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/pdfsummariser">PDF Summariser</Link></li>
               </>
             )}
           </ul>
