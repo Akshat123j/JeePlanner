@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ─── Subject / Topic Config ────────────────────────────────────────────────
 const SUBJECTS = {
   Physics: {
     color: "#00d4ff",
@@ -19,7 +18,6 @@ const SUBJECTS = {
   },
 };
 
-// ─── Global CSS ────────────────────────────────────────────────────────────
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,6 +43,50 @@ const STYLES = `
   .init-fill { position: absolute; top: 0; left: 0; height: 100%; width: 50%; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: initSweep 1.5s infinite linear; }
   @keyframes initPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } }
   @keyframes initSweep { 0% { left: -50%; } 100% { left: 100%; } }
+
+  /* ── QUIZ GENERATION LOADER ── */
+  .qgen-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+  .qgen-orbit { position: relative; width: 120px; height: 120px; margin-bottom: 40px; }
+  .qgen-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .qgen-core-inner { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), #06b6d4); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: white; animation: corePulse 2s infinite ease-in-out; }
+  .qgen-ring { position: absolute; inset: 0; border: 2px solid transparent; border-top-color: var(--accent); border-radius: 50%; animation: spin 1.4s linear infinite; }
+  .qgen-ring2 { position: absolute; inset: 8px; border: 1px solid transparent; border-bottom-color: #06b6d4; border-radius: 50%; animation: spin 2s linear infinite reverse; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes corePulse { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(124,58,237,0)} 50%{transform:scale(1.06);box-shadow:0 0 0 10px rgba(124,58,237,0)} }
+
+  .qgen-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .qgen-title span { color: var(--accent); }
+  .qgen-sub { font-size: 13px; color: var(--muted); font-family: 'Space Mono', monospace; margin-bottom: 36px; }
+
+  .qgen-steps { display: flex; flex-direction: column; gap: 10px; width: 320px; }
+  .qgen-step { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; transition: all .3s; }
+  .qgen-step.done { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.04); }
+  .qgen-step.active { border-color: rgba(124,58,237,.4); background: rgba(124,58,237,.06); animation: stepGlow .8s ease-in-out infinite alternate; }
+  @keyframes stepGlow { from { border-color: rgba(124,58,237,.3); } to { border-color: rgba(124,58,237,.6); } }
+  .qgen-step-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; background: var(--border); transition: all .3s; }
+  .qgen-step.done .qgen-step-icon { background: rgba(16,185,129,.15); }
+  .qgen-step.active .qgen-step-icon { background: rgba(124,58,237,.2); }
+  .qgen-step-info { flex: 1; }
+  .qgen-step-label { font-size: 13px; font-weight: 700; color: var(--muted); transition: color .3s; }
+  .qgen-step.done .qgen-step-label { color: var(--success); }
+  .qgen-step.active .qgen-step-label { color: var(--text); }
+  .qgen-step-detail { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 2px; opacity: 0; transition: opacity .3s; }
+  .qgen-step.active .qgen-step-detail, .qgen-step.done .qgen-step-detail { opacity: 1; }
+  .qgen-step-check { font-size: 14px; opacity: 0; transition: opacity .3s; }
+  .qgen-step.done .qgen-step-check { opacity: 1; }
+
+  .qgen-progress { width: 320px; margin-top: 28px; }
+  .qgen-prog-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-family: 'Space Mono', monospace; }
+  .qgen-prog-label { color: var(--muted); }
+  .qgen-prog-val { color: var(--accent); }
+  .qgen-prog-track { width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .qgen-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #06b6d4); border-radius: 2px; transition: width .4s ease; }
+
+  /* ── QUESTION SKELETON ── */
+  .qskel { animation: skelFade 1.4s ease-in-out infinite; }
+  @keyframes skelFade { 0%,100%{opacity:.5} 50%{opacity:1} }
+  .skel-block { background: var(--surface2); border-radius: 8px; }
+  .skel-line { height: 14px; border-radius: 6px; background: var(--border); margin-bottom: 10px; }
 
   /* ── HEADER ── */
   .hdr { padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
@@ -199,12 +241,6 @@ const STYLES = `
   .trpct{font-size:13px;font-weight:700;font-family:'Space Mono',monospace;width:40px;text-align:right}
   .ract { display:flex;gap:12px;justify-content:center;margin-top:4px; }
 
-  /* ── LOADING ── */
-  .lscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:16px}
-  .lspinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .ltxt{font-size:14px;color:var(--muted);font-family:'Space Mono',monospace}
-
   /* ── ANALYSIS PAGE ── */
   .apage { max-width: 1100px; }
   .sum-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px; }
@@ -247,9 +283,128 @@ const STYLES = `
   }
 `;
 
+// ─── Quiz Generation Loading Screen ───────────────────────────────────────
+function QuizGenLoader({ subject, topics, questionCount, generatedCount }) {
+  const subjectColor = SUBJECTS[subject]?.color || "#7c3aed";
+  const subjectIcon = SUBJECTS[subject]?.icon || "⚡";
+
+  const steps = [
+    { icon: "🧠", label: "Analyzing weak areas", detail: "Scanning your performance history..." },
+    { icon: "🎯", label: "Selecting topics", detail: `${topics.join(", ")}` },
+    { icon: "⚡", label: "Generating questions", detail: `${generatedCount}/${questionCount} questions ready` },
+    { icon: "✅", label: "Finalizing test", detail: "Applying JEE difficulty calibration..." },
+  ];
+
+  const activeStep = generatedCount === 0 ? 1 : generatedCount < questionCount ? 2 : 3;
+  const progress = Math.round((generatedCount / questionCount) * 100);
+
+  return (
+    <div className="qgen-loader">
+      <div className="qgen-orbit">
+        <div className="qgen-ring" />
+        <div className="qgen-ring2" />
+        <div className="qgen-core">
+          <div className="qgen-core-inner" style={{ background: `linear-gradient(135deg, ${subjectColor}, #7c3aed)` }}>
+            {subjectIcon}
+          </div>
+        </div>
+      </div>
+
+      <div className="qgen-title">Building Your <span style={{ color: subjectColor }}>Test</span></div>
+      <div className="qgen-sub">AI is crafting {questionCount} JEE-pattern questions</div>
+
+      <div className="qgen-steps">
+        {steps.map((step, i) => {
+          const isDone = i < activeStep;
+          const isActive = i === activeStep;
+          return (
+            <div key={i} className={`qgen-step ${isDone ? "done" : isActive ? "active" : ""}`}>
+              <div className="qgen-step-icon">{step.icon}</div>
+              <div className="qgen-step-info">
+                <div className="qgen-step-label">{step.label}</div>
+                <div className="qgen-step-detail">{step.detail}</div>
+              </div>
+              <div className="qgen-step-check">✓</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="qgen-progress">
+        <div className="qgen-prog-row">
+          <span className="qgen-prog-label">Generation progress</span>
+          <span className="qgen-prog-val">{progress}%</span>
+        </div>
+        <div className="qgen-prog-track">
+          <div className="qgen-prog-fill" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Question Skeleton Loader ──────────────────────────────────────────────
+function QuestionSkeleton() {
+  return (
+    <div className="qlayout">
+      <div className="qskel">
+        {/* Header badges */}
+        <div className="qhdr" style={{ marginBottom: 20 }}>
+          <div className="skel-block" style={{ width: 60, height: 30, borderRadius: 8 }} />
+          <div className="skel-block" style={{ width: 120, height: 30, borderRadius: 8 }} />
+          <div className="skel-block" style={{ width: 80, height: 30, borderRadius: 8, marginLeft: "auto" }} />
+        </div>
+
+        {/* Question card skeleton */}
+        <div className="qcard">
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <div className="skel-block" style={{ width: 60, height: 22, borderRadius: 20 }} />
+            <div className="skel-block" style={{ width: 120, height: 22, borderRadius: 20 }} />
+          </div>
+          <div className="skel-line" style={{ width: "95%" }} />
+          <div className="skel-line" style={{ width: "88%" }} />
+          <div className="skel-line" style={{ width: "72%", marginBottom: 24 }} />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="skel-block" style={{ height: 54, borderRadius: 12, display: "flex", alignItems: "center", gap: 14, padding: "0 20px" }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--border)" }} />
+                <div className="skel-line" style={{ flex: 1, margin: 0, height: 12 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action row skeleton */}
+        <div className="actrow">
+          <div className="skel-block" style={{ width: 80, height: 42, borderRadius: 10 }} />
+          <div className="skel-block" style={{ width: 100, height: 42, borderRadius: 10, marginLeft: "auto" }} />
+        </div>
+      </div>
+
+      {/* Sidebar skeleton */}
+      <div className="qskel">
+        <div className="sdcard">
+          <div className="skel-line" style={{ width: 80, marginBottom: 16 }} />
+          <div className="skel-block" style={{ height: 80, borderRadius: 10, marginBottom: 8 }} />
+          <div className="skel-line" style={{ width: "60%", margin: "8px auto" }} />
+        </div>
+        <div className="sdcard">
+          <div className="skel-line" style={{ width: 100, marginBottom: 16 }} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6 }}>
+            {Array(10).fill(0).map((_, i) => (
+              <div key={i} className="skel-block" style={{ aspectRatio: 1, borderRadius: 8 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Gemini AI ─────────────────────────────────────────────────────────────
 async function callGemini(systemPrompt, userPrompt) {
-  const API_KEY = "AIzaSyBkGcYogu3CvsTvO2KhXMPWlxmZrN7SDg0";
+  const API_KEY = "AAIzaSyDeJi-Ao-V68cvcHliTEFa59FZch5BGF4k";
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
   const response = await fetch(apiUrl, {
     method: "POST",
@@ -474,7 +629,6 @@ function PerformanceRings({ progress }) {
   );
 }
 
-// ─── Post-Exam Graphical Analysis (in-results) ─────────────────────────────
 function ExamAnalysis({ questions, answers, timePerQ, subject, weakAreas }) {
   const topicAcc = {};
   questions.forEach((q, i) => {
@@ -491,7 +645,6 @@ function ExamAnalysis({ questions, answers, timePerQ, subject, weakAreas }) {
 
   return (
     <>
-      {/* Donut + Topic bars */}
       <div className="chart-grid">
         <div className="ranalysis" style={{ marginBottom: 0 }}>
           <div className="ratitle">🍩 Answer Breakdown</div>
@@ -511,8 +664,6 @@ function ExamAnalysis({ questions, answers, timePerQ, subject, weakAreas }) {
           })}
         </div>
       </div>
-
-      {/* Time analysis */}
       <div className="ranalysis">
         <div className="ratitle">⏱ Time Analysis</div>
         <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 24, alignItems: "center" }}>
@@ -533,8 +684,6 @@ function ExamAnalysis({ questions, answers, timePerQ, subject, weakAreas }) {
           </div>
         </div>
       </div>
-
-      {/* Radar for this exam */}
       <div className="ranalysis">
         <div className="ratitle">🕸 Mastery Radar — {subject}</div>
         <RadarChart topics={SUBJECTS[subject]?.topics || []} weakAreas={weakAreas} color={sc} />
@@ -543,7 +692,6 @@ function ExamAnalysis({ questions, answers, timePerQ, subject, weakAreas }) {
   );
 }
 
-// ─── Global Analysis Page ──────────────────────────────────────────────────
 function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelectedSubject }) {
   const totAtt = Object.values(weakAreas).reduce((a, v) => a + v.count, 0);
   const ovAcc = totAtt ? Math.round(Object.values(weakAreas).reduce((a, v) => a + v.correct, 0) / totAtt * 100) : 0;
@@ -564,7 +712,6 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
 
   return (
     <div className="apage">
-      {/* Summary cards */}
       <div className="sum-grid">
         {[
           { l: "Overall Accuracy", v: ovAcc + "%", c: ovAcc >= 70 ? "#10b981" : ovAcc >= 45 ? "#f59e0b" : "#ff3b5c" },
@@ -578,8 +725,6 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
           </div>
         ))}
       </div>
-
-      {/* Radar + Rings */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-title">Topic Mastery Radar — {selectedSubject}</div>
@@ -611,14 +756,10 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
           </div>
         </div>
       </div>
-
-      {/* Heatmap */}
       <div className="chart-card-full">
         <div className="chart-title">Concept Accuracy Heatmap — All Topics</div>
         <Heatmap weakAreas={weakAreas} />
       </div>
-
-      {/* Score trend + Speed gauge */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-title">Score Trend ({sessions.length} sessions)</div>
@@ -655,8 +796,6 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
           </div>
         </div>
       </div>
-
-      {/* All-time donut + weak insights */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-title">All-Time Answer Distribution</div>
@@ -708,7 +847,7 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
 
 // ─── Main App ──────────────────────────────────────────────────────────────
 export default function JEEMockTest() {
-  const [isAppLoading, setIsAppLoading] = useState(true); // NEW: Initial loading state
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("test");
   const [screen, setScreen] = useState("dashboard");
   const [selectedSubject, setSelectedSubject] = useState("Physics");
@@ -727,20 +866,16 @@ export default function JEEMockTest() {
   const [progress, setProgress] = useState({});
   const [sessions, setSessions] = useState([]);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
-  
+  const [generatedCount, setGeneratedCount] = useState(0); // NEW: tracks live progress
+
   const timerRef = useRef(null);
   const savedHandleTimeout = useRef();
 
-  // Load persisted data & Initial App Loading Timer
   useEffect(() => {
     setProgress(LS.get("jee_progress", {}));
     setWeakAreas(LS.get("jee_weak", {}));
     setSessions(LS.get("jee_sessions", []));
-
-    // Simulate app initialization for 1.8 seconds
-    const initTimer = setTimeout(() => {
-      setIsAppLoading(false);
-    }, 1800);
+    const initTimer = setTimeout(() => setIsAppLoading(false), 1800);
     return () => clearTimeout(initTimer);
   }, []);
 
@@ -756,26 +891,18 @@ export default function JEEMockTest() {
     }
   }
 
-  useEffect(() => {
-    savedHandleTimeout.current = handleTimeout;
-  });
+  useEffect(() => { savedHandleTimeout.current = handleTimeout; });
 
   useEffect(() => {
     if (screen !== "quiz") return;
-    
-    setTimeLeft(120); 
+    setTimeLeft(120);
     setQStartTime(Date.now());
-    
     timerRef.current = setInterval(() => {
-      setTimeLeft(t => { 
-        if (t <= 1) { 
-          if (savedHandleTimeout.current) savedHandleTimeout.current();
-          return 120; 
-        } 
-        return t - 1; 
+      setTimeLeft(t => {
+        if (t <= 1) { if (savedHandleTimeout.current) savedHandleTimeout.current(); return 120; }
+        return t - 1;
       });
     }, 1000);
-    
     return () => clearInterval(timerRef.current);
   }, [currentQ, screen]);
 
@@ -787,6 +914,7 @@ export default function JEEMockTest() {
   async function startQuiz() {
     if (!selectedTopics.length) return;
     setGeneratingQuiz(true);
+    setGeneratedCount(0);  // reset progress counter
     const diffs = difficultyMode === "Mixed" ? ["Easy", "Medium", "Hard", "Medium", "Hard"] : Array(questionCount).fill(difficultyMode);
     const weak = getWeakTopics();
     const qs = [];
@@ -794,6 +922,7 @@ export default function JEEMockTest() {
       const topic = selectedTopics[i % selectedTopics.length];
       const q = await generateQuestion(selectedSubject, topic, diffs[i % diffs.length], weak);
       if (q) qs.push({ ...q, topic, subject: selectedSubject });
+      setGeneratedCount(i + 1);  // update live count after each question
     }
     setQuestions(qs); setAnswers({}); setExplanations({}); setTimePerQ({});
     setCurrentQ(0); setGeneratingQuiz(false); setScreen("quiz");
@@ -865,7 +994,7 @@ export default function JEEMockTest() {
   const q = questions[currentQ], answered = answers[currentQ], exp = explanations[currentQ];
   const subjectColor = SUBJECTS[selectedSubject]?.color || "#7c3aed";
 
-  // ── INITIAL LOADING SCREEN ──
+  // ── INITIAL APP LOADING ──
   if (isAppLoading) {
     return (
       <>
@@ -880,6 +1009,24 @@ export default function JEEMockTest() {
           <div style={{ marginTop: 20, fontSize: 12, color: 'var(--muted)', fontFamily: 'Space Mono', letterSpacing: 2 }}>
             INITIALIZING AI ENGINE...
           </div>
+        </div>
+      </>
+    );
+  }
+
+  // ── QUIZ GENERATION FULL-SCREEN LOADING ──
+  if (generatingQuiz) {
+    return (
+      <>
+        <style>{STYLES}</style>
+        <div className="app">
+          <div className="grid-bg" />
+          <QuizGenLoader
+            subject={selectedSubject}
+            topics={selectedTopics}
+            questionCount={questionCount}
+            generatedCount={generatedCount}
+          />
         </div>
       </>
     );
@@ -979,8 +1126,8 @@ export default function JEEMockTest() {
                         🎯 Weak areas detected: <strong>{getWeakTopics().join(", ")}</strong> — AI will target these
                       </div>
                     )}
-                    <button className="btn-p" disabled={!selectedTopics.length || generatingQuiz} onClick={startQuiz}>
-                      {generatingQuiz ? "Generating Questions..." : `Start Test — ${questionCount} Questions`}
+                    <button className="btn-p" disabled={!selectedTopics.length} onClick={startQuiz}>
+                      Start Test — {questionCount} Questions
                     </button>
                     {!selectedTopics.length && <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)" }}>Select at least one topic to begin</div>}
                   </div>
@@ -1006,11 +1153,9 @@ export default function JEEMockTest() {
                 </>
               )}
 
-              {/* QUIZ */}
+              {/* QUIZ — show skeleton while first question loads, real UI after */}
               {screen === "quiz" && (
-                generatingQuiz ? (
-                  <div className="lscreen"><div className="lspinner" /><div className="ltxt">Generating AI questions...</div></div>
-                ) : q ? (
+                !q ? <QuestionSkeleton /> : (
                   <div className="qlayout">
                     <div>
                       <div className="qhdr">
@@ -1095,7 +1240,7 @@ export default function JEEMockTest() {
                       )}
                     </div>
                   </div>
-                ) : null
+                )
               )}
 
               {/* RESULTS */}
@@ -1112,14 +1257,11 @@ export default function JEEMockTest() {
                       <div className="rstat"><div className="rsnum" style={{ color: "#00d4ff" }}>{Object.values(timePerQ).length ? Math.round(Object.values(timePerQ).reduce((a, b) => a + b, 0) / Object.values(timePerQ).length) : 0}s</div><div className="rslbl">Avg Time/Q</div></div>
                     </div>
                   </div>
-
-                  {/* Post-exam graphical analysis */}
                   <ExamAnalysis
                     questions={questions} answers={answers}
                     timePerQ={timePerQ} subject={selectedSubject}
                     weakAreas={weakAreas}
                   />
-
                   <div className="ranalysis">
                     <div className="ratitle">🤖 AI Insights</div>
                     <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.8 }}>
@@ -1133,7 +1275,6 @@ export default function JEEMockTest() {
                       </div>
                     )}
                   </div>
-
                   <div className="ract">
                     <button className="btn-s" onClick={() => { setScreen("dashboard"); setQuestions([]); setAnswers({}); }}>← Dashboard</button>
                     <button className="btn-a" onClick={() => setActiveTab("analysis")}>📊 Full Analysis</button>
