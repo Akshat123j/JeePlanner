@@ -238,14 +238,8 @@ const STYLES = `
 
 // ─── Gemini AI ─────────────────────────────────────────────────────────────
 async function callGemini(systemPrompt, userPrompt) {
-  // ⚠️ SECURITY WARNING: Exposing your API key in front-end code is dangerous in production.
-  // Anyone can inspect your site's code and steal this key. Use a backend server for production!
-  const API_KEY = "AIzaSyBkGcYogu3CvsTvO2KhXMPWlxmZrN7SDg0"; 
-  
-  // NOTE: Switched to gemini-1.5-flash as the standard, stable endpoint
+  const API_KEY = "AIzaSyBkGcYogu3CvsTvO2KhXMPWlxmZrN7SDg0";
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-  
-  // FIXED: Changed 'url' to 'apiUrl' below
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -721,7 +715,9 @@ export default function JEEMockTest() {
   const [progress, setProgress] = useState({});
   const [sessions, setSessions] = useState([]);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  
   const timerRef = useRef(null);
+  const savedHandleTimeout = useRef();
 
   // Load persisted data
   useEffect(() => {
@@ -730,39 +726,25 @@ export default function JEEMockTest() {
     setSessions(LS.get("jee_sessions", []));
   }, []);
 
-  // Timer
-  useEffect(() => {
-    if (screen !== "quiz") return;
-    setTimeLeft(120); setQStartTime(Date.now());
-    timerRef.current = setInterval(() => {
-      setTimeLeft(t => { if (t <= 1) { handleTimeout(); return 120; } return t - 1; });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [currentQ, screen]);
-
-// 1. Create a ref to always hold the latest version of our timeout function
-  const handleTimeoutRef = useRef(null);
-
-  // 2. Define the timeout function
-  const handleTimeout = useCallback(() => {
+  // ── FIX: Warning-Free Timer Logic ──
+  function handleTimeout() {
     if (answers[currentQ] !== undefined) return;
     const elapsed = (Date.now() - qStartTime) / 1000;
     setTimePerQ(p => ({ ...p, [currentQ]: elapsed }));
     setAnswers(a => ({ ...a, [currentQ]: -1 }));
-    
     if (currentQ + 1 < questions.length) {
       setTimeout(() => setCurrentQ(q => q + 1), 500);
     } else {
       saveSessionAndResults();
     }
-  }, [answers, currentQ, qStartTime, questions.length]);
+  }
 
-  // 3. Keep the ref updated with the newest function
+  // Always keep the ref updated with the latest handleTimeout function
   useEffect(() => {
-    handleTimeoutRef.current = handleTimeout;
-  }, [handleTimeout]);
+    savedHandleTimeout.current = handleTimeout;
+  });
 
-  // 4. Timer Effect
+  // Timer Effect depends ONLY on the variables that dictate when it stops/starts
   useEffect(() => {
     if (screen !== "quiz") return;
     
@@ -772,8 +754,7 @@ export default function JEEMockTest() {
     timerRef.current = setInterval(() => {
       setTimeLeft(t => { 
         if (t <= 1) { 
-          // Call the function from the ref instead of directly
-          if (handleTimeoutRef.current) handleTimeoutRef.current(); 
+          if (savedHandleTimeout.current) savedHandleTimeout.current();
           return 120; 
         } 
         return t - 1; 
@@ -781,7 +762,9 @@ export default function JEEMockTest() {
     }, 1000);
     
     return () => clearInterval(timerRef.current);
-  }, [currentQ, screen]); // Clean dependency array! No warnings, no infinite loops.
+  }, [currentQ, screen]);
+  // ───────────────────────────────────
+
   const getWeakTopics = useCallback(() =>
     Object.entries(weakAreas).filter(([, v]) => v.accuracy < 50 && v.count >= 2)
       .sort((a, b) => a[1].accuracy - b[1].accuracy).slice(0, 3).map(([k]) => k),
