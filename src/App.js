@@ -328,11 +328,11 @@ export default function App() {
                     <SectionDivider label="Mock Test" icon="📝" />
 
                     {/* Mock Test */}
-                    <Section delay={0}>
+                    {/* <Section delay={0}>
                       <ComponentCard accent="var(--color-indigo)" glow>
                         <Mocktest />
                       </ComponentCard>
-                    </Section>
+                    </Section> */}
 
                     {/* <SectionDivider label="Profile" icon="👤" /> */}
 
@@ -389,6 +389,20 @@ export default function App() {
                     <ComponentCard accent="var(--color-fuchsia)">
                       <PdfSummarizer mode={mode} />
                     </ComponentCard>
+                  </div>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/test"
+              element={
+                user ? (
+                  <div className="page-wrapper">
+                    <ComponentCard accent="var(--color-indigo)" glow>
+                        <Mocktest />
+                      </ComponentCard>
                   </div>
                 ) : (
                   <Navigate to="/login" />

@@ -28,6 +28,7 @@ export default function Navbar(props) {
                 <li className="nav-item"><Link className="nav-link" to="/ai">AI</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/timetable">TimeTable</Link></li>
                 <li className="nav-item"><Link className="nav-link" to="/pdfsummariser">PDF Summariser</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/test">Mock Test</Link></li>
               </>
             )}
           </ul>
