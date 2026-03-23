@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import './CameraTracker.mjs'
 
 export default function UniversalTimeTracker(props) {
   const isLight = props.mode === "light";
