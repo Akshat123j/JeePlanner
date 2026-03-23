@@ -35,6 +35,17 @@ const STYLES = `
     background-size: 40px 40px; }
   .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
+  /* ── INITIAL LOADER ── */
+  .init-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .init-logo { font-size: 32px; display: flex; align-items: center; gap: 16px; margin-bottom: 30px; animation: initPulse 2s infinite ease-in-out; }
+  .init-logo-mark { width: 56px; height: 56px; background: linear-gradient(135deg, var(--accent), #06b6d4); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; color: white; box-shadow: 0 0 30px rgba(124,58,237,0.3); }
+  .init-logo-text { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .init-logo-text span { color: var(--accent); }
+  .init-bar { width: 200px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; position: relative; }
+  .init-fill { position: absolute; top: 0; left: 0; height: 100%; width: 50%; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: initSweep 1.5s infinite linear; }
+  @keyframes initPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } }
+  @keyframes initSweep { 0% { left: -50%; } 100% { left: 100%; } }
+
   /* ── HEADER ── */
   .hdr { padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
   .hdr-inner { display: flex; align-items: center; justify-content: space-between; }
@@ -697,6 +708,7 @@ function AnalysisPage({ progress, weakAreas, sessions, selectedSubject, setSelec
 
 // ─── Main App ──────────────────────────────────────────────────────────────
 export default function JEEMockTest() {
+  const [isAppLoading, setIsAppLoading] = useState(true); // NEW: Initial loading state
   const [activeTab, setActiveTab] = useState("test");
   const [screen, setScreen] = useState("dashboard");
   const [selectedSubject, setSelectedSubject] = useState("Physics");
@@ -719,14 +731,19 @@ export default function JEEMockTest() {
   const timerRef = useRef(null);
   const savedHandleTimeout = useRef();
 
-  // Load persisted data
+  // Load persisted data & Initial App Loading Timer
   useEffect(() => {
     setProgress(LS.get("jee_progress", {}));
     setWeakAreas(LS.get("jee_weak", {}));
     setSessions(LS.get("jee_sessions", []));
+
+    // Simulate app initialization for 1.8 seconds
+    const initTimer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 1800);
+    return () => clearTimeout(initTimer);
   }, []);
 
-  // ── FIX: Warning-Free Timer Logic ──
   function handleTimeout() {
     if (answers[currentQ] !== undefined) return;
     const elapsed = (Date.now() - qStartTime) / 1000;
@@ -739,12 +756,10 @@ export default function JEEMockTest() {
     }
   }
 
-  // Always keep the ref updated with the latest handleTimeout function
   useEffect(() => {
     savedHandleTimeout.current = handleTimeout;
   });
 
-  // Timer Effect depends ONLY on the variables that dictate when it stops/starts
   useEffect(() => {
     if (screen !== "quiz") return;
     
@@ -763,7 +778,6 @@ export default function JEEMockTest() {
     
     return () => clearInterval(timerRef.current);
   }, [currentQ, screen]);
-  // ───────────────────────────────────
 
   const getWeakTopics = useCallback(() =>
     Object.entries(weakAreas).filter(([, v]) => v.accuracy < 50 && v.count >= 2)
@@ -850,6 +864,26 @@ export default function JEEMockTest() {
   const timerClass = timeLeft <= 10 ? "danger" : timeLeft <= 30 ? "warning" : "";
   const q = questions[currentQ], answered = answers[currentQ], exp = explanations[currentQ];
   const subjectColor = SUBJECTS[selectedSubject]?.color || "#7c3aed";
+
+  // ── INITIAL LOADING SCREEN ──
+  if (isAppLoading) {
+    return (
+      <>
+        <style>{STYLES}</style>
+        <div className="init-loader">
+          <div className="grid-bg" />
+          <div className="init-logo">
+            <div className="init-logo-mark">JEE</div>
+            <div className="init-logo-text">Mock<span>Forge</span></div>
+          </div>
+          <div className="init-bar"><div className="init-fill" /></div>
+          <div style={{ marginTop: 20, fontSize: 12, color: 'var(--muted)', fontFamily: 'Space Mono', letterSpacing: 2 }}>
+            INITIALIZING AI ENGINE...
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
